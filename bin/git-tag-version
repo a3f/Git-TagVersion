@@ -12,6 +12,12 @@ git-tag-version is a git sub command to manage version tags.
  * show next version
  * create a tag for next version
 
+=head1 INSTALLATION
+
+To install from CPAN:
+
+  cpanm Git::TagVersion
+
 =head1 SYNOPSIS
 
   usage: git-tag-version [-?afhlmnpt] [long options...]
@@ -76,10 +82,10 @@ If you know what to do than create a tag for it:
 
 package main;
 
-# VERSION
-
 use strict;
 use warnings;
+
+# VERSION
 
 use Git::TagVersion::App;
 

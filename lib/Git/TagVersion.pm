@@ -5,9 +5,9 @@ use Moose;
 # VERSION
 # ABSTRACT: module to manage version tags in git
 
+use Git::TagVersion::Version;
 use Git::Wrapper;
 
-# VERSION
 
 has 'fetch' => ( is => 'rw', isa => 'Bool', default => 0 );
 has 'push' => ( is => 'rw', isa => 'Bool', default => 0 );
