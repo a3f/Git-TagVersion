@@ -1,0 +1,94 @@
+#!/usr/bin/env perl
+
+# PODNAME: git-tag-version
+# ABSTRACT: git command to manage version tags
+
+=head1 DESCRIPTION
+
+git-tag-version is a git sub command to manage version tags.
+
+ * list all available versions (sorted by version)
+ * show last version
+ * show next version
+ * create a tag for next version
+
+=head1 SYNOPSIS
+
+  usage: git-tag-version [-?afhlmnpt] [long options...]
+        -h -? --usage --help          Prints this usage information.
+        -f --fetch                    fetch remote refs before finding last
+                                      version
+        -p --push                     push new created tag to remote
+        --list-all -a --all           list all existing versions
+        --last-version -l --last      display last version
+        -m --major --incr_level       do a (more) major release
+        --minor --add_level           add a new minor version level
+        --next-version -n --next      display next version
+        --tag-next-version -t --tag   create tag for next version
+
+=head1 EXAMPLES
+
+The git repository has at least one base version:
+
+  $ git tag
+  v3.8.0
+  v3.8.1
+
+Display available versions:
+
+  $ git tag-version -a
+  3.8.1
+  3.8.0
+
+Display the last version tagged:
+
+  $ git tag-version -l
+  3.8.1
+
+Display the next version:
+
+  $ git tag-version -n
+  3.8.2
+
+If we want to make something bigger:
+
+  $ git tag-version -n --major
+  3.9.0
+
+Or something real big:
+
+  $ git tag-version -n --major --major
+  4.0.0
+
+Or something smaller:
+
+  $ git tag-version -n --minor
+  3.8.2.0
+
+If you know what to do than create a tag for it:
+
+  $ git tag-version -t
+  tagged v3.8.2
+  $ git tag-version -t --major
+  tagged v3.9.0
+
+=cut
+
+package main;
+
+# VERSION
+
+use strict;
+use warnings;
+
+use Git::TagVersion::App;
+
+eval {
+  my $app = Git::TagVersion::App->new_with_options;
+  $app->run;
+};
+if( $@ ) {
+  exit 1;
+}
+
+exit 0;
