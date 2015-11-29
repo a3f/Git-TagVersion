@@ -1,7 +1,6 @@
 package Git::TagVersion::Cmd::Command::tag;
 
 use Moose;
-use Moose::Util::TypeConstraints;
 
 extends 'Git::TagVersion::Cmd::Command';
 
@@ -13,12 +12,6 @@ has 'push' => (
   traits => [ 'Getopt' ],
   cmd_aliases => 'p',
   documentation => 'push new created tag to remote',
-);
-
-subtype 'IncrOption' => as 'Int';
-
-MooseX::Getopt::OptionTypeMap->add_option_type_to_map(
-  'IncrOption' => '+'
 );
 
 has 'major' => (

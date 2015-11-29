@@ -2,6 +2,9 @@ package Git::TagVersion::Cmd::Command;
 
 use Moose;
 
+# VERSION
+# ABSTRACT: base class for all git-tag-version subcommands
+
 extends 'MooseX::App::Cmd::Command';
 
 use Git::TagVersion;
