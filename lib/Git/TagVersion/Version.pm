@@ -5,6 +5,10 @@ use Moose;
 # VERSION
 # ABSTRACT: class for working with a version number
 
+use Template;
+use File::Slurp;
+use Time::Piece;
+
 use overload
   'cmp' => \&_cmp;
 
@@ -13,6 +17,56 @@ has 'digits' => (
 );
 
 has 'seperator' => ( is => 'ro', isa => 'Str', default => '.' );
+
+has 'tag' => ( is => 'rw', isa => 'Maybe[Str]' );
+
+has 'prev' => ( is => 'rw', isa => 'Maybe[Git::TagVersion::Version]' );
+
+has 'repo' => ( is => 'ro', isa => 'Git::Wrapper', required => 1 );
+
+has 'log' => (
+  is => 'ro', isa => 'ArrayRef[Git::Wrapper::Log]', lazy => 1,
+  default => sub {
+    my $self = shift;
+    my @log;
+
+    my $revisions;
+    if( defined $self->prev ) {
+      $revisions = $self->prev->tag.'...'.$self->tag;
+    } else {
+      $revisions = $self->tag;
+    }
+
+    @log = $self->repo->log( $revisions );
+    return \@log;
+  },
+);
+
+has 'date' => (
+  is => 'ro', isa => 'Maybe[Time::Piece]', lazy => 1,
+  default => sub {
+    my $self = shift;
+    if( defined $self->log->[0] ) {
+      my $date = $self->log->[0]->date;
+      $date =~ s/^\w+ //;
+      return Time::Piece->strptime(
+        $date,
+        "%b %d %H:%M:%S %Y %z",
+      );
+    }
+    return;
+  },
+);
+has 'author' => (
+  is => 'ro', isa => 'Maybe[Str]', lazy => 1,
+  default => sub {
+    my $self = shift;
+    if( defined $self->log->[0] ) {
+      return( $self->log->[0]->author );
+    }
+    return;
+  },
+);
 
 sub _cmp {
   my ( $obj_a, $obj_b ) = @_;
@@ -40,7 +94,10 @@ sub _cmp {
 
 sub clone {
   my $self = shift;
-  return __PACKAGE__->new( digits => [ @{$self->digits} ] );
+  return __PACKAGE__->new(
+    digits => [ @{$self->digits} ],
+    repo => $self->repo,
+  );
 }
 
 sub increment {
@@ -75,15 +132,15 @@ sub as_string {
   return( join( $self->seperator, @{$self->digits} ) );
 }
 
-sub parse_string {
-  my ( $self, $string ) = @_;
-  $string =~ s/^v//;
+sub parse_version {
+  my ( $self, $version ) = @_;
+  $version =~ s/^v//;
 
-  my @digits = split(/\./, $string );
+  my @digits = split(/\./, $version );
 
   foreach my $d ( @digits ) {
     if( $d !~ /^\d+$/ ) {
-      die("$d is not numeric in version string");
+      die("$d is not numeric in version tag");
     }
   }
 
@@ -92,12 +149,67 @@ sub parse_string {
   return;
 }
 
-sub new_from_string {
-  my ( $class, $string ) = @_;
-  my $obj = $class->new;
-  $obj->parse_string( $string );
-  return $obj;
+has '_tt' => (
+  is => 'ro', isa => 'Template', lazy => 1,
+  default => sub {
+   return Template->new(
+     EVAL_PERL => 1,
+   );
+ },
+);
+
+has 'template_file' => ( is => 'ro', isa => 'Maybe[Str]' );
+
+has '_template' => (
+  is => 'ro', isa => 'Str', lazy => 1,
+  default => sub {
+    my $self = shift;
+    if( $self->template_file ) {
+      return read_file( $self->template_file );
+    }
+    return read_file( \*DATA );
+  },
+);
+
+sub render {
+  my ( $self, $style ) = @_;
+  if( ! defined $style ) {
+    $style = 'simple';
+  }
+  my $template = $self->_template;
+  my $out;
+
+  $self->_tt->process( \$template, {
+    style => $style,
+    self => $self,
+  }, \$out )
+    or die $self->_tt->error()."\n";
+
+  return $out;
 }
 
 1;
 
+__DATA__
+[% BLOCK markdown -%]
+## Release [[% self.as_string %]] - [% self.date.strftime("%Y-%m-%d") %]
+[% FOREACH log = self.log -%]
+  - [% log.message.match('^(.*)\n').0 %]
+[% END -%]
+
+[% END -%]
+[% BLOCK rpm -%]
+* [% self.date.strftime("%a %b %d %Y") %] [% self.author %] [% self.as_string %]
+[% FOREACH log = self.log -%]
+- [% log.message.match('^(.*)\n').0 %]
+[% END -%]
+
+[% END -%]
+[% BLOCK simple -%]
+Changes in version [% self.as_string %]:
+[% FOREACH log = self.log -%]
+ * [% log.message.match('^(.*)\n').0 %]
+[% END -%]
+
+[% END -%]
+[% INCLUDE $style -%]

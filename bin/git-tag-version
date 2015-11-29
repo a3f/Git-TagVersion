@@ -11,6 +11,7 @@ git-tag-version is a git sub command to manage version tags.
  * show last version
  * show next version
  * create a tag for next version
+ * create a changelog in different styles
 
 =head1 INSTALLATION
 
@@ -20,17 +21,18 @@ To install from CPAN:
 
 =head1 SYNOPSIS
 
-  usage: git-tag-version [-?afhlmnpt] [long options...]
-        -h -? --usage --help          Prints this usage information.
-        -f --fetch                    fetch remote refs before finding last
-                                      version
-        -p --push                     push new created tag to remote
-        --list-all -a --all           list all existing versions
-        --last-version -l --last      display last version
-        -m --major --incr_level       do a (more) major release
-        --minor --add_level           add a new minor version level
-        --next-version -n --next      display next version
-        --tag-next-version -t --tag   create tag for next version
+  git-tag-version <command> [options...]
+
+It supports the following subcommands:
+
+   commands: list the application's commands
+       help: display a command's help screen
+
+  changelog: generate a changelog
+       last: print last version
+       list: print all versions
+       next: print next version
+        tag: create a new version tag
 
 =head1 EXAMPLES
 
@@ -42,41 +44,64 @@ The git repository has at least one base version:
 
 Display available versions:
 
-  $ git tag-version -a
+  $ git tag-version list
   3.8.1
   3.8.0
 
 Display the last version tagged:
 
-  $ git tag-version -l
+  $ git tag-version last
   3.8.1
 
 Display the next version:
 
-  $ git tag-version -n
+  $ git tag-version next
   3.8.2
 
-If we want to make something bigger:
+Tag the next version and push it:
 
-  $ git tag-version -n --major
-  3.9.0
-
-Or something real big:
-
-  $ git tag-version -n --major --major
-  4.0.0
-
-Or something smaller:
-
-  $ git tag-version -n --minor
-  3.8.2.0
-
-If you know what to do than create a tag for it:
-
-  $ git tag-version -t
+  $ git tag-version tag -p
   tagged v3.8.2
-  $ git tag-version -t --major
-  tagged v3.9.0
+
+=head1 COMMANDS
+
+All commands accept the following options:
+
+  -f --fetch           fetch remote refs first
+  -r --repo            path to git repository
+  -h -? --usage --help  Prints this usage information.
+
+=head2 changelog
+
+Generate a changelog from git logs.
+
+A style for the changelog could be set with:
+
+  -s --style           format of changelog
+
+Supported styles are: simple(default), rpm, markdown
+
+=head2 last
+
+Show the last tagged version.
+
+=head2 list
+
+List all tagged versions.
+
+=head2 next
+
+Show next version.
+
+=head2 tag
+
+Tag next version.
+
+Options:
+
+  -p --push            push new created tag to remote
+  -m --major           do a (more) major release
+  --minor              add a new minor version level
 
 =cut
 
@@ -87,14 +112,7 @@ use warnings;
 
 # VERSION
 
-use Git::TagVersion::App;
+use Git::TagVersion::Cmd;
 
-eval {
-  my $app = Git::TagVersion::App->new_with_options;
-  $app->run;
-};
-if( $@ ) {
-  exit 1;
-}
+Git::TagVersion::Cmd->run;
 
-exit 0;

@@ -37,12 +37,28 @@ has 'versions' => (
     foreach my $tag ( $self->repo->tag ) {
       if( my ($v_str) = $tag =~ /$regex/) {
         my $version;
-        eval { $version = Git::TagVersion::Version->new_from_string( $v_str ) };
+        eval {
+          $version = Git::TagVersion::Version->new(
+            repo => $self->repo,
+          );
+          $version->parse_version( $v_str );
+          $version->tag( $tag );
+        };
         if( $@ ) { next; }
         push( @versions, $version );
       }
     }
-    return [ reverse sort @versions ];
+    @versions = sort @versions;
+    my $prev;
+    foreach my $version ( @versions ) {
+      if( defined $prev ) {
+        $version->prev( $prev );
+      }
+      $prev = $version;
+    }
+
+    @versions = reverse @versions;
+    return \@versions;
   },
 );
 
