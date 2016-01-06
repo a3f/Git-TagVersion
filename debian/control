@@ -1,0 +1,21 @@
+Source: git-tag-version
+Section: perl
+Priority: optional
+Maintainer: Markus Benning <ich@markusbenning.de>
+Build-Depends: debhelper (>= 9)
+Build-Depends-Indep: perl
+Standards-Version: 3.9.6
+Homepage: https://metacpan.org/release/Git-TagVersion
+
+Package: git-tag-version
+Architecture: all
+Depends: ${misc:Depends}, ${perl:Depends}
+Description: git extension to manage version tags in git
+ git-tag-version is a git sub command to manage version tags.
+ .
+ It is able to:
+  * list all available versions (sorted by version)
+  * show last version
+  * show next version
+  * create a tag for next version
+  * create a changelog in different styles
